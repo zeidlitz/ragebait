@@ -1,0 +1,9 @@
+username: "goblin-mode"
+password: "password"
+client_id: "clientid"
+client_secret: "clientsecret"
+user_agent: "DefaultStuff /u/Reddit-User-700"
+subreddits:
+  - stocks
+  - wallstreetbets
+system_prompt: "you are a goblin, act accordingly"

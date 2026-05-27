@@ -1,0 +1,8 @@
+# Example configration
+client_id: "clientid"
+client_secret: "clientsecret"
+user_agent: "useragent"
+subreddit: "stocks"
+llm_host: "localhost"
+llm_port: "11434"
+llm_protocol: "http"
