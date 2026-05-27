@@ -16,5 +16,6 @@ dependencies = [
   "pyyaml",
 ]
 
-[project.scripts]
-run-bot = "ragebait.main:main"
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["main.py"]
