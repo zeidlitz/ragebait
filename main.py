@@ -32,19 +32,10 @@ def load_config(path):
 
 def load_config_from_env():
     return {
-        "extraction_limit": int(os.environ.get("EXTRACTION_LIMIT", 25)),
-        "extraction_intervall": int(os.environ.get("EXTRACTION_INTERVALL", 5)),
         "client_id": os.environ.get("CLIENT_ID", ""),
         "client_secret": os.environ.get("CLIENT_SECRET", ""),
         "user_agent": os.environ.get("USER_AGENT", ""),
         "subreddit": os.environ.get("SUBREDDIT", ""),
-        "redis": {
-            "host": os.environ.get("REDIS_HOST", "localhost"),
-            "port": int(os.environ.get("REDIS_PORT", 6379)),
-            "maxlen": int(os.environ.get("REDIS_MAXLEN", 100000)),
-        },
-        "producer_stream": os.environ.get("PRODUCER_STREAM", "data_extraction"),
-        "consumer_group": os.environ.get("CONSUMER_GROUP", "data_extraction"),
     }
 
 
@@ -58,19 +49,6 @@ def parse_args():
             f"too many input arguments, recieved {nrArgs} need exactlly one. Recieved: {args[1:]}"
         )
     return args[1]
-
-
-def create_redis_consumer_group(
-    redis_client, producer_stream, consumer_group, _id, mkstream
-):
-    try:
-        logging.info(f"creating consumer group {consumer_group} for {producer_stream}")
-        redis_client.xgroup_create(
-            producer_stream, consumer_group, id=_id, mkstream=mkstream
-        )
-    except Exception as e:
-        logging.info(f"Exception {e}")
-        pass
 
 
 def run(reddit_client, subreddit, system_prompt):
