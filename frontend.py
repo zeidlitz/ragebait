@@ -1,71 +1,71 @@
-import glob
 import json
-import yaml
+from typing import Any
 from jsonschema import validate, ValidationError
 
 import streamlit as st
 from streamlit import session_state as session
 
-MODELS_PATH = "assets/models/"
-
-INITIAL_SESSION = {
-    "username": "",
-    "subreddits": [],
-    "system_prompt": "",
-}
+models_path = "assets/models/"
 
 def load_schema():
-    schema_path = MODELS_PATH + "schema.json"
+    schema_path = models_path + "schema.json"
     with open(schema_path, "r") as f:
         return json.load(f)
 
 
-def init_models():
-    model_files = glob.glob(f"{MODELS_PATH}**/*.yaml", recursive=True)
-    if not model_files:
-        return []
+def init_models() -> list:
+    model_file = f"{models_path}/models.json"
 
-    models = {}
     schema = load_schema()
-    for file_path in model_files:
-        with open(file_path, "r") as f:
-            data = yaml.safe_load(f)
-            try:
-                file_name = f.name.removeprefix(MODELS_PATH)
-                validate(instance=data, schema=schema)
-                models[file_name] = data
-            except ValidationError as e:
-                print(f"invalid model file {file_path}: {e.message}")
+    with open(model_file, "r") as f:
+        models = json.load(f)
+        try:
+            validate(instance=models, schema=schema)
+            return models
+        except ValidationError as e:
+            print(f"invalid model file: {e.message}")
     return models or []
 
 
-def init_session():
-    for key, value in INITIAL_SESSION.items():
-        if key not in session:
-            session[key] = value
+def init_session(models):
+    if "initialized" in session:
+        return
+    st.session_state.initialized = True
+    model = models[0]
+    load_session(model)
 
+def load_session(model):
+    for key, value in model.items():
+        session[key] = value
 
-def load_model(models, model_name="default.yaml"):
-    print(f"loading {model_name}")
+def load_model(models, model_name) -> dict[Any, Any]:
     try:
-        model = models.get(model_name)
-        for key, _ in session.items():
-            session[key] = model.get(key)
-
-        return model
+        for model in models:
+            if model.get("model_name") == model_name:
+                return model
     except KeyError as e:
         print(f"could not load model {model_name}: {e}")
-
+        return {}
+    return {}
 
 def create_model():
     pass
 
+
 def main():
-    init_session()
     models = init_models()
-    _ = load_model(models)
+    init_session(models)
     render(models)
 
+def select_model(models, model_name):
+    for model in models:
+        if model.get("model_name") == model_name:
+            load_session(model)
+
+def new_model(model_name, username, password, client_id, client_secret, picture, user_agent, subreddits, system_prompt):
+    #TODO: implement
+    print(model_name, username, password, client_id, client_secret, picture, user_agent, subreddits, system_prompt)
+    st.rerun()
 
 def render(models):
     with st.sidebar:
@@ -73,16 +73,34 @@ def render(models):
         load_new_container = st.container(horizontal=True)
         st.divider()
         with load_new_container:
-            load_model_button = st.button("load", type="primary")
-            if load_model_button:
-                pass
-            new_model_button = st.button("new", type="primary")
-            if new_model_button:
-                pass
+            load_model_popover = st.popover("load", type="primary", key="load_model_trigger")
+            with load_model_popover:
+                for model in models:
+                    model_name = model.get("model_name")
+                    st.button(model_name, key=f"model_button_{model_name}", on_click=select_model, args=(models, model_name, ))
+                    ## TODO: Fix this rerun 
+                    # t.rerun()
+
+            new_model_popover = st.popover("new", type="primary", key="new_model_trigger")
+            with new_model_popover:
+                st.markdown("Create a new model")
+                model_name = st.text_input("model_name")
+                username = st.text_input("username")
+                password = st.text_input("password", type="password")
+                client_id = st.text_input("client_id")
+                client_secret = st.text_input("client_secret", type="password")
+                picture = st.file_uploader("picture")
+                user_agent = st.text_input("user_agent")
+                subreddits = st.text_input("subreddits")
+                system_prompt = st.text_input("system_prompt")
+                create_button = st.button("create")
+                if create_button:
+                    new_model(model_name, username, password, client_id, client_secret, picture, user_agent, subreddits, system_prompt)
+
         st.markdown(f"name: `{session.username}`")
-        st.image("assets/static/goblin.png", width=175)
+        st.image(f"assets/static/{session.picture}", width=175)
         with st.chat_message(""):
-            st.write("hey, I'm a goblin")
+            st.write("...")
         st.chat_input(f"talk to {session.username}")
         st.divider()
 
@@ -108,11 +126,9 @@ def render(models):
     with model_stats_container:
         st.metric(label="upvotes", value="78", delta="8")
         st.metric(label="downvotes", value="-789", delta="-97")
-        from numpy.random import default_rng as rng
-        changes = list(rng(4).standard_normal(20))
-        data = [sum(changes[:i]) for i in range(20)]
-        delta = round(data[-1], 2)
-        st.metric("overview", "/r/stocks", delta, chart_data=data, chart_type="bar", border=True)
+        with st.container():
+            st.markdown("latest comments:")
+            st.markdown(f"*only goblins understand*")
 
 
 if __name__ == "__main__":
