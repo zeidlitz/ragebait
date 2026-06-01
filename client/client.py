@@ -2,20 +2,39 @@ import requests
 
 from typing import Any
 
+
 class ClientException(Exception):
     pass
 
+
 class OllamaClient:
-    def __init__(self, config: dict):
-        self.api_host = config.get("llm_url")
-        self.api_port = config.get("llm_port")
-        self.api_protocol = config.get("llm_protocol")
-        self.api_url = f"{self.api_protocol}://{self.api_host}:{self.api_port}/"
+    def __init__(self, model, host, port, protocol):
+        self.model = model
+        self.api_host = host
+        self.api_port = port
+        self.api_protocol = protocol
+        self.api_url = f"{self.api_protocol}://{self.api_host}:{self.api_port}"
+
+    def get_completion(self, system_prompt, prompt):
+        payload = {
+            "model": self.model,
+            "system": system_prompt,
+            "prompt": prompt,
+            "stream": False,
+        }
+        url = self.api_url + "/api/generate"
+        response = self.post(url, payload)
+        if response.status_code not in [200]:
+            raise ClientException(f"could not get completion {response.text}")
+        try:
+            return response.json().get("response")
+        except KeyError as e:
+            raise ClientException(f"could not extract completion response {e}")
 
     def _headers(self):
         return {
-                "Content-Type": "application/json",
-                }
+            "Content-Type": "application/json",
+        }
 
     def _request(self, method: str, url: str, **kwargs) -> requests.Response:
         try:

@@ -2,11 +2,6 @@
 extraction
 assets/
 
-!assets/models/default.yaml
-!assets/models/schema.json
-!assets/static/farmer.png
-!assets/static/goblin.png
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
