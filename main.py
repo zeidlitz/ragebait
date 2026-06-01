@@ -1,8 +1,9 @@
-import os
-import sys
 import logging
-import praw
-import yaml
+import time
+import os
+
+from model import ModelBroker
+from client import OllamaClient
 from importlib.metadata import version, PackageNotFoundError
 
 logging.basicConfig(
@@ -17,7 +18,7 @@ class ParseException(Exception):
 def get_version():
     __version__ = "unknown"
     try:
-        __version__ = version("data-extraction")
+        __version__ = version("ragebait")
     except PackageNotFoundError:
         logging.warning(
             "could not read pacakge version, ensure project is installed properly"
@@ -25,83 +26,23 @@ def get_version():
     return __version__
 
 
-def load_config(path):
-    with open(path, "r") as file:
-        return yaml.safe_load(file)
-
-
-def load_config_from_env():
-    return {
-        "client_id": os.environ.get("CLIENT_ID", ""),
-        "client_secret": os.environ.get("CLIENT_SECRET", ""),
-        "user_agent": os.environ.get("USER_AGENT", ""),
-        "subreddit": os.environ.get("SUBREDDIT", ""),
-    }
-
-
-def parse_args():
-    args = sys.argv
-    nrArgs = len(args)
-    if nrArgs == 1:
-        return None
-    if nrArgs > 2:
-        raise ParseException(
-            f"too many input arguments, recieved {nrArgs} need exactlly one. Recieved: {args[1:]}"
-        )
-    return args[1]
-
-
-def run(reddit_client, subreddit, system_prompt):
-    sr = reddit_client.subreddit(subreddit)
-    for comment in sr.comments(limit=1):
-        # print(subreddit)
-        # print(comment.submission.title)
-        # print(comment.body)
-        print(system_prompt + comment.submission.title, comment.body)
-        # comment.reply("I agree with this guy!")
-
-def configure():
-    try:
-        config_path = parse_args()
-    except ParseException as e:
-        print(e)
-        os._exit(1)
-    if config_path is None:
-        logging.info(
-            "No config file supplied, loading config from environment variables"
-        )
-        config = load_config_from_env()
-    else:
-        try:
-            config = load_config(config_path)
-        except FileNotFoundError as e:
-            print(f"could not open config: {e} ")
-            os._exit(1)
-    client_id = config.get("client_id", "")
-    client_secret = config.get("client_secret", "")
-    user_agent = config.get("user_agent", "")
-    user_agent = config.get("subreddit", "stocks")
-    subreddit = config.get("subreddit", "")
-    system_prompt = config.get("system_prompt", "")
-    username = config.get("username")
-    password = config.get("password")
-    reddit_client = praw.Reddit(
-        username=username,
-        password=password,
-        client_id=client_id,
-        subreddit=subreddit,
-        client_secret=client_secret,
-        user_agent=user_agent,
-        read_only=False,
-    )
-    return reddit_client, subreddit, system_prompt
-
-
 def main():
     __version__ = get_version()
     logging.info(f"Running version {__version__}")
-    reddit_client, subreddit, system_prompt = configure()
-    run(reddit_client, subreddit, system_prompt)
+
+    llm_model = os.environ.get("LLM_MODEL", "llama2-uncensored:latest")
+    host = os.environ.get("LLM_HOST", "localhost")
+    port = os.environ.get("LLM_PORT", "11434")
+    protocol = os.environ.get("LLM_PROTOCOL", "http")
+    delay_hours = os.environ.get("DELAY_HOURS", 12)
+    ollama_client = OllamaClient(llm_model, host, port, protocol)
+    model_broker = ModelBroker(ollama_client=ollama_client)
+    delay_seconds = delay_hours * 60 * 60
+    while True:
+        model_broker.run()
+        logging.info(f"next run in {delay_hours} hours...")
+        time.sleep(float(delay_seconds))
+
 
 if __name__ == "__main__":
     main()
