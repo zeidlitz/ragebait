@@ -3,7 +3,7 @@ import time
 import os
 
 from model import ModelBroker
-from client import OllamaClient
+from client import Client
 from importlib.metadata import version, PackageNotFoundError
 
 logging.basicConfig(
@@ -30,13 +30,9 @@ def main():
     __version__ = get_version()
     logging.info(f"Running version {__version__}")
 
-    llm_model = os.environ.get("LLM_MODEL", "llama2-uncensored:latest")
-    host = os.environ.get("LLM_HOST", "localhost")
-    port = os.environ.get("LLM_PORT", "11434")
-    protocol = os.environ.get("LLM_PROTOCOL", "http")
     delay_hours = os.environ.get("DELAY_HOURS", 12)
-    ollama_client = OllamaClient(llm_model, host, port, protocol)
-    model_broker = ModelBroker(ollama_client=ollama_client)
+    ollama_client = Client()
+    model_broker = ModelBroker(llm_client=ollama_client)
     delay_seconds = delay_hours * 60 * 60
     while True:
         model_broker.run()

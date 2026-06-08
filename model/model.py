@@ -4,7 +4,7 @@ import jsonschema
 import logging
 import praw
 
-from client import OllamaClient, ClientException
+from client import Client, ClientException
 from typing import Any
 from prawcore.exceptions import OAuthException
 
@@ -20,11 +20,11 @@ class ModelException(Exception):
 class ModelBroker:
     def __init__(
         self,
-        ollama_client: OllamaClient,
+        llm_client: Client,
         model_name: str = "",
     ):
         self.models_path = "assets/models/"
-        self.ollama_client = ollama_client
+        self.ollama_client = llm_client
         self.model_name = model_name
         self.models = self.load_models()
         self.model = self.load_model(self.model_name)

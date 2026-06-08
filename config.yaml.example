@@ -1,4 +1,0 @@
-# Example configration
-llm_host: "localhost"
-llm_port: "11434"
-llm_protocol: "http"

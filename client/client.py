@@ -7,8 +7,8 @@ class ClientException(Exception):
     pass
 
 
-class OllamaClient:
-    def __init__(self, model, host, port, protocol):
+class Client:
+    def __init__(self, model="llama2-uncensored:latest", host="localhost", port="11434", protocol="http"):
         self.model = model
         self.api_host = host
         self.api_port = port

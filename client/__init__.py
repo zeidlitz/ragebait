@@ -1,1 +1,1 @@
-from client.client import OllamaClient, ClientException
+from client.client import Client, ClientException
